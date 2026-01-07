@@ -45,7 +45,196 @@ This deployment will be customized to perform intelligent research across the cu
 ### Use Case:
 Transform from generic research assistant → **Construction project monitoring agent** that autonomously audits job site activities against contract terms, identifies compliance issues, and generates actionable intelligence to keep projects on cost and on schedule.
 
---- 
+---
+
+## 🔗 Related Repositories & Integration Architecture
+
+### Associated TIA Works Repositories:
+
+#### 1. **NIM Repository** (Local)
+**Location:** `C:\Users\MatthewSmith\Projects\NIM`  
+**Purpose:** NVIDIA Inference Microservices examples and RAG patterns
+
+**Key Components:**
+- **NVIDIA NIM Overview** - Documentation on optimized inference microservices
+- **Basic RAG Examples** - LangChain and LlamaIndex implementations
+- **Advanced RAG Patterns:**
+  - `multimodal_rag` - Process contracts, charts, photos, blueprints
+  - `structured_data_rag` - Query cost schedules, living contracts, structured construction data
+  - `multi_turn_rag` - Follow-up questions for deeper investigation
+  - `query_decomposition_rag` - Break complex compliance questions into targeted searches
+- **test_rag.py** - Working test scripts for document upload and queries
+
+**Integration Value:**
+- Provides proven RAG patterns for construction document processing
+- Multi-modal support for drawings, photos, schedules, and contracts
+- Query decomposition enables complex compliance analysis
+- Test scripts accelerate development of compliance-specific queries
+
+#### 2. **snow-phone Repository** (HC-Build)
+**Purpose:** WhatsApp interface for field workers to interact with DeCerTu intelligence platform
+
+**Key Features:**
+
+**SEEK Mode (Query Interface):**
+- Field workers text questions via WhatsApp
+- Routes to TIA API → searches project data → returns answers with citations
+- Examples: "What's tomorrow's delivery schedule?" "Where is electrical panel floor 3?" "Show HVAC drawings"
+
+**PROVIDE Mode (Evidence Capture):**
+- 📸 Progress photos → Auto-tagged, matched to schedule
+- 🎥 Delivery videos → VSS processes to identify materials, vehicles, vendors
+- 🎤 Voice notes → Transcribed and searchable
+- 📄 Documents/receipts → OCR'd and filed to correct project
+
+**Gang Box Recordings:**
+- Voice-activated crew meeting transcription
+- Extracts action items, identifies safety topics
+- Updates project board automatically
+
+**Proactive Alerts:**
+- Delivery notifications ("🚚 Arriving in 30 min")
+- Safety alerts (weather, hazards)
+- Schedule updates
+
+**Integration Flow:**
+```
+WhatsApp ← → snow-phone ← → TIA API ← → DeCerTu Intelligence
+                                    ↓
+                          [This ent_rag_search repo]
+                                    ↓
+                         Context-Aware RAG answers
+                         VSS Blueprint video analysis
+                         Reconciliation engine
+```
+
+**Integration Value:**
+- Zero-friction field data collection (everyone knows WhatsApp)
+- Real-time evidence capture as work happens
+- Automatic organization and tagging via AI
+- Hands-free voice interface for field conditions
+- Bridges office intelligence with field reality
+
+---
+
+## 🏗️ Proposed Ultimate Construction Intelligence Platform
+
+### Integration Architecture Vision:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Field Layer (Input)                       │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │
+│  │  WhatsApp    │  │ Field Photos │  │ Gang Box     │     │
+│  │  Interface   │  │  & Videos    │  │  Recordings  │     │
+│  │ (snow-phone) │  │              │  │              │     │
+│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘     │
+└─────────┼──────────────────┼──────────────────┼─────────────┘
+          │                  │                  │
+          └──────────────────┴──────────────────┘
+                             ↓
+┌─────────────────────────────────────────────────────────────┐
+│              Intelligence Processing Layer                   │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │  TIA API Gateway (snow-phone backend)                │  │
+│  │  • User authentication & routing                     │  │
+│  │  • Intent classification (SEEK vs PROVIDE)           │  │
+│  │  • Media processing & storage                        │  │
+│  └────────────────────┬─────────────────────────────────┘  │
+│                       ↓                                     │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │  DeCerTu Intelligence Core                           │  │
+│  │  • VSS Blueprint (video/photo analysis)              │  │
+│  │  • Reconciliation engine (contract matching)         │  │
+│  │  • Context-aware processing                          │  │
+│  └────────────────────┬─────────────────────────────────┘  │
+│                       ↓                                     │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │  AI-Q Research Assistant (ent_rag_search)            │  │
+│  │  • Contract compliance research                      │  │
+│  │  • Cost & schedule deviation detection               │  │
+│  │  • Automated compliance reports                      │  │
+│  │  • Living contract synchronization                   │  │
+│  │  • Predictive risk analysis                          │  │
+│  └────────────────────┬─────────────────────────────────┘  │
+│                       ↓                                     │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │  Advanced RAG Layer (NIM patterns)                   │  │
+│  │  • Multimodal RAG (drawings, photos, contracts)      │  │
+│  │  • Structured data RAG (schedules, budgets)          │  │
+│  │  • Query decomposition (complex compliance)          │  │
+│  │  • Multi-turn conversations                          │  │
+│  └────────────────────┬─────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────┘
+                        ↓
+┌─────────────────────────────────────────────────────────────┐
+│                  Foundation Layer                            │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐        │
+│  │ NVIDIA NIMs │  │  Vector DB  │  │  Document   │        │
+│  │   LLMs      │  │  (Milvus)   │  │   Storage   │        │
+│  │  Embedding  │  │             │  │   (MinIO)   │        │
+│  │  Reranking  │  │             │  │             │        │
+│  └─────────────┘  └─────────────┘  └─────────────┘        │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Integration Benefits:
+
+**For Field Workers:**
+- Ask questions via familiar WhatsApp interface
+- Capture evidence hands-free (photos, video, voice)
+- Get instant answers from project intelligence
+- Zero training required
+
+**For Project Managers:**
+- Real-time compliance monitoring across all job site activities
+- Evidence-backed answers to stakeholder questions (seconds vs. hours)
+- Proactive alerts before issues become crises
+- Automatic correlation of field evidence to contract terms
+
+**For Executives:**
+- Portfolio-wide risk visibility
+- Predictive insights on cost/schedule performance
+- Audit trails with citations to source documents
+- Confidence in data-driven decision making
+
+**Data Flow Example:**
+```
+1. Foreman takes photo of concrete pour → WhatsApp
+2. snow-phone processes → TIA API
+3. VSS analyzes quality → DeCerTu
+4. ent_rag_search checks against contract specs
+5. NIM multimodal RAG confirms compliance
+6. Result: "✅ Concrete pour meets contract spec 5.2.3
+   Evidence: Photo timestamp, contract citation, spec document"
+7. Automatic update to project board and compliance dashboard
+```
+
+### Development Roadmap Notes for Ali:
+
+**Phase 1: Foundation (Current)**
+- Deploy ent_rag_search base system
+- Test NIM RAG patterns with construction documents
+- Validate core compliance monitoring workflows
+
+**Phase 2: Field Integration (Next)**
+- Integrate snow-phone WhatsApp interface
+- Connect evidence capture to compliance engine
+- Implement real-time alerting
+
+**Phase 3: Intelligence Loop (Future)**
+- Close loop: field evidence → compliance analysis → predictive insights → field alerts
+- Gang box meeting analysis → automatic task creation
+- Delivery video → reconciliation → budget impact
+
+**Repository Connection Decision Points:**
+1. Keep repositories separate with API boundaries? (Recommended for modularity)
+2. Merge into monorepo? (Simpler deployment, harder to maintain)
+3. Docker Compose orchestration across repos? (Middle ground)
+
+**Ali - Your decision on architecture approach will determine integration strategy.**
+
+---
 
 ## Table of Contents
 
