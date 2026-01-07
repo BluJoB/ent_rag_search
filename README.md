@@ -211,8 +211,16 @@ WhatsApp ← → snow-phone ← → TIA API ← → DeCerTu Intelligence
 - Hands-free voice interface for field conditions
 - Bridges office intelligence with field reality
 
-#### 3. **DeepStream → TIA Works PoC** (deepstream_TMI)
-**Purpose:** Real-time video analytics pipeline for construction site monitoring
+#### 3. **deepstream_TMI Repository**
+**Purpose:** Real-time video analytics pipeline feeding site observation data into TIA Works' Living Contract Model reconciliation system
+
+**Repository Role in TIA Works Ecosystem:**
+This is one of **four primary data sources** feeding the Living Contract Model:
+
+1. **Legacy Systems** (job costing, procurement) → Financial reconciliation
+2. **Project Management** (submittals, RFIs, drawings) → Scope reconciliation
+3. **deepstream_TMI** (video analytics) → Real-time site reconciliation ← **THIS REPO**
+4. **Team Intelligence** (WhatsApp, field reports) → Communication reconciliation
 
 **Architecture:**
 ```
@@ -223,7 +231,49 @@ Ring Cameras → DeepStream (AWS/Jetson) → JSON Events → Kafka → TIA Works
           Metadata Extraction
 ```
 
-**Key Components:**
+**What It Does:**
+- Ingests camera streams (Ring cameras, IP cameras, RTSP sources)
+- Detects and tracks objects (workers, equipment, vehicles, materials)
+- Extracts structured event data (timestamps, locations, object classes, tracking IDs)
+- Streams JSON events to TIA Works for contract reconciliation
+
+**Event Schema (TIA Works Compliant):**
+```json
+{
+  "event_id": "uuid",
+  "timestamp": "2026-01-05T14:32:15.123Z",
+  "camera_id": "site_zone_identifier",
+  "object_id": 42,
+  "class": "person|equipment|vehicle|material",
+  "confidence": 0.94,
+  "bbox": {"x": 0.35, "y": 0.42, "width": 0.12, "height": 0.28},
+  "metadata": {
+    "zone_id": "foundation_zone_b",
+    "dwell_time_sec": 3.4,
+    "activity": "forming"
+  }
+}
+```
+
+**Reconciliation Agent Integration:**
+DeepStream events feed TIA Works agents for:
+- **Labor reconciliation:** Detected worker counts vs budgeted crew sizes
+- **Schedule validation:** Observed activities vs planned tasks
+- **Equipment utilization:** Asset presence vs procurement/dispatch records
+- **Material tracking:** Delivery detection vs procurement orders
+- **Safety compliance:** PPE detection, hazard zone monitoring
+
+**Repository Structure:**
+```
+deepstream_TMI/
+├── deepstream/config/          # DeepStream pipeline configurations
+├── schemas/                     # Event schema + TIA table definitions
+├── scripts/                     # Validation + Kafka producer
+├── docker-compose.yml           # Container orchestration
+└── docs/                        # Phase 1/2 deployment checklists
+```
+
+**Deployment Phases:**
 
 **Phase 1 - AWS PoC (95% Complete):**
 - AWS EC2 g4dn.xlarge (NVIDIA T4 GPU, ~$0.53/hr)
@@ -232,25 +282,7 @@ Ring Cameras → DeepStream (AWS/Jetson) → JSON Events → Kafka → TIA Works
 - Object tracker with persistent IDs
 - JSON event serializer
 - Test video validation (150MB sample)
-
-**Event Schema:**
-```json
-{
-  "event_id": "550e8400-...",
-  "timestamp": "2026-01-05T14:32:15.123Z",
-  "camera_id": "cam_lobby_01",
-  "object_id": 42,
-  "class": "person",
-  "confidence": 0.94,
-  "bbox": {"x": 0.35, "y": 0.42, "width": 0.12, "height": 0.28},
-  "metadata": {
-    "speed": 1.2,
-    "direction": 87,
-    "zone_id": "zone_entrance",
-    "dwell_time_sec": 3.4
-  }
-}
-```
+- Quick Start: `ssh ubuntu@3.236.97.46; cd deepstream_TMI; docker-compose up`
 
 **Phase 2 - Kafka Integration (Next):**
 - DeepStream → Kafka topic (`deepstream.detections`)
@@ -260,24 +292,34 @@ Ring Cameras → DeepStream (AWS/Jetson) → JSON Events → Kafka → TIA Works
 
 **Phase 3 - Edge Deployment (Jetson AGX Orin 64GB):**
 - Same DeepStream SDK (no code changes from AWS)
-- Process 8-16+ camera streams simultaneously
-- Low latency (no cloud hop), lower opex
+- Process 8-16+ camera streams simultaneously per job site
+- On-site reconciliation agents (NVIDIA Agent Toolkit)
+- Low latency (<100ms detection → agent action)
 - 64GB RAM, 2048 CUDA cores
 - Hardware video decode (8x 4K@30fps)
-- Deployment: Ring Cameras → Jetson AGX Orin → Kafka → TIA Works
 
-**Performance Targets:**
-- Phase 1: 30 FPS, 10+ events/sec, <100ms detection latency
-- Phase 2: <5 sec end-to-end, no event loss
-- Phase 3: 8+ concurrent streams, 99.9% uptime
+**Success Metrics:**
+- Phase 1: 30 FPS processing, 10+ events/sec, schema compliance
+- Phase 2: <5 sec latency (camera → TIA reconciliation), 0% event loss
+- Phase 3: Multi-camera scaling (8-16 streams), 99.9% uptime
 
 **Integration Value:**
-- Real-time visual monitoring of job site activities
-- Automated detection of personnel, vehicles, equipment
-- Object tracking with persistent IDs across frames
-- Dwell time and zone analytics for safety compliance
-- Integration with compliance engine via structured events
-- Time-series analytics for trend detection
+**Transforms passive surveillance into active construction intelligence** by:
+
+**What TIA Works Gains:**
+- ✅ **Continuous site observation** (every frame analyzed vs manual field reports)
+- ✅ **Automatic variance detection** (real-time alerts vs end-of-day updates)
+- ✅ **Pattern learning** (data flywheel for predictive intelligence vs reactive problem solving)
+
+**What TIA Works Would Lack Without This:**
+- ❌ Manual field reports (lagging indicators)
+- ❌ Photo uploads (inconsistent, delayed)
+- ❌ End-of-day updates (too late for intervention)
+
+**Dependencies:**
+- **Upstream (Consumes):** Camera streams (RTSP, file, ring-mqtt bridge), DeepStream models
+- **Downstream (Provides):** Kafka topic → TIA Works ingestion, TimescaleDB events, Agent framework event stream
+- **Cross-Repo:** tia-works-agents (consumes events), tia-works-schema (defines structure), tia-works-data-flywheel (training)
 - Edge processing for low latency and reduced bandwidth
 
 **Construction Use Cases:**
