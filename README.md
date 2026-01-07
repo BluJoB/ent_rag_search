@@ -115,6 +115,91 @@ WhatsApp ← → snow-phone ← → TIA API ← → DeCerTu Intelligence
 - Hands-free voice interface for field conditions
 - Bridges office intelligence with field reality
 
+#### 3. **DeepStream → TIA Works PoC** (deepstream_TMI)
+**Purpose:** Real-time video analytics pipeline for construction site monitoring
+
+**Architecture:**
+```
+Ring Cameras → DeepStream (AWS/Jetson) → JSON Events → Kafka → TIA Works → TimescaleDB
+                    ↓
+          Object Detection (ResNet10)
+          Object Tracking (NvDCF)
+          Metadata Extraction
+```
+
+**Key Components:**
+
+**Phase 1 - AWS PoC (95% Complete):**
+- AWS EC2 g4dn.xlarge (NVIDIA T4 GPU, ~$0.53/hr)
+- NVIDIA DeepStream 8.0 container
+- Primary detector: ResNet10 (person, car, truck, bicycle)
+- Object tracker with persistent IDs
+- JSON event serializer
+- Test video validation (150MB sample)
+
+**Event Schema:**
+```json
+{
+  "event_id": "550e8400-...",
+  "timestamp": "2026-01-05T14:32:15.123Z",
+  "camera_id": "cam_lobby_01",
+  "object_id": 42,
+  "class": "person",
+  "confidence": 0.94,
+  "bbox": {"x": 0.35, "y": 0.42, "width": 0.12, "height": 0.28},
+  "metadata": {
+    "speed": 1.2,
+    "direction": 87,
+    "zone_id": "zone_entrance",
+    "dwell_time_sec": 3.4
+  }
+}
+```
+
+**Phase 2 - Kafka Integration (Next):**
+- DeepStream → Kafka topic (`deepstream.detections`)
+- TIA Kafka Connector → TimescaleDB
+- Ring-MQTT bridge for RTSP streams
+- Target: <5 sec end-to-end latency, no event loss, 7-day retention
+
+**Phase 3 - Edge Deployment (Jetson AGX Orin 64GB):**
+- Same DeepStream SDK (no code changes from AWS)
+- Process 8-16+ camera streams simultaneously
+- Low latency (no cloud hop), lower opex
+- 64GB RAM, 2048 CUDA cores
+- Hardware video decode (8x 4K@30fps)
+- Deployment: Ring Cameras → Jetson AGX Orin → Kafka → TIA Works
+
+**Performance Targets:**
+- Phase 1: 30 FPS, 10+ events/sec, <100ms detection latency
+- Phase 2: <5 sec end-to-end, no event loss
+- Phase 3: 8+ concurrent streams, 99.9% uptime
+
+**Integration Value:**
+- Real-time visual monitoring of job site activities
+- Automated detection of personnel, vehicles, equipment
+- Object tracking with persistent IDs across frames
+- Dwell time and zone analytics for safety compliance
+- Integration with compliance engine via structured events
+- Time-series analytics for trend detection
+- Edge processing for low latency and reduced bandwidth
+
+**Construction Use Cases:**
+- Safety monitoring (PPE detection, restricted zone violations)
+- Delivery tracking (vehicle arrival, material identification)
+- Workforce analytics (crew size, productivity patterns)
+- Equipment utilization (idle time, movement tracking)
+- Security (unauthorized access, after-hours activity)
+- Progress verification (visual confirmation of completed work)
+
+**Quick Start (AWS):**
+```bash
+ssh -i deepstream-key.pem ubuntu@3.236.97.46
+cd deepstream_TMI
+docker-compose up deepstream-app
+tail -f deepstream/output/events.json
+```
+
 ---
 
 ## 🏗️ Proposed Ultimate Construction Intelligence Platform
@@ -129,9 +214,14 @@ WhatsApp ← → snow-phone ← → TIA API ← → DeCerTu Intelligence
 │  │  Interface   │  │  & Videos    │  │  Recordings  │     │
 │  │ (snow-phone) │  │              │  │              │     │
 │  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘     │
-└─────────┼──────────────────┼──────────────────┼─────────────┘
-          │                  │                  │
-          └──────────────────┴──────────────────┘
+│         │                  │                  │             │
+│  ┌──────┴──────────────────┴──────────────────┴───────┐   │
+│  │  Ring Cameras (8-16 streams)                        │   │
+│  │  → DeepStream on Jetson AGX Orin                    │   │
+│  │  → Real-time object detection/tracking              │   │
+│  │  → Structured JSON events                           │   │
+│  └─────────────────────────┬────────────────────────────┘   │
+└────────────────────────────┼─────────────────────────────────┘
                              ↓
 ┌─────────────────────────────────────────────────────────────┐
 │              Intelligence Processing Layer                   │
@@ -143,8 +233,16 @@ WhatsApp ← → snow-phone ← → TIA API ← → DeCerTu Intelligence
 │  └────────────────────┬─────────────────────────────────┘  │
 │                       ↓                                     │
 │  ┌──────────────────────────────────────────────────────┐  │
+│  │  Kafka Event Streaming                               │  │
+│  │  • deepstream.detections (real-time video events)    │  │
+│  │  • field.evidence (WhatsApp submissions)             │  │
+│  │  • compliance.alerts (automated notifications)       │  │
+│  └────────────────────┬─────────────────────────────────┘  │
+│                       ↓                                     │
+│  ┌──────────────────────────────────────────────────────┐  │
 │  │  DeCerTu Intelligence Core                           │  │
 │  │  • VSS Blueprint (video/photo analysis)              │  │
+│  │  • DeepStream event processing                       │  │
 │  │  • Reconciliation engine (contract matching)         │  │
 │  │  • Context-aware processing                          │  │
 │  └────────────────────┬─────────────────────────────────┘  │
@@ -156,6 +254,7 @@ WhatsApp ← → snow-phone ← → TIA API ← → DeCerTu Intelligence
 │  │  • Automated compliance reports                      │  │
 │  │  • Living contract synchronization                   │  │
 │  │  • Predictive risk analysis                          │  │
+│  │  • Video analytics integration                       │  │
 │  └────────────────────┬─────────────────────────────────┘  │
 │                       ↓                                     │
 │  ┌──────────────────────────────────────────────────────┐  │
@@ -170,9 +269,9 @@ WhatsApp ← → snow-phone ← → TIA API ← → DeCerTu Intelligence
 ┌─────────────────────────────────────────────────────────────┐
 │                  Foundation Layer                            │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐        │
-│  │ NVIDIA NIMs │  │  Vector DB  │  │  Document   │        │
-│  │   LLMs      │  │  (Milvus)   │  │   Storage   │        │
-│  │  Embedding  │  │             │  │   (MinIO)   │        │
+│  │ NVIDIA NIMs │  │TimescaleDB/ │  │  Document   │        │
+│  │   LLMs      │  │Vector Store │  │   Storage   │        │
+│  │  Embedding  │  │  (Milvus)   │  │   (MinIO)   │        │
 │  │  Reranking  │  │             │  │             │        │
 │  └─────────────┘  └─────────────┘  └─────────────┘        │
 └─────────────────────────────────────────────────────────────┘
@@ -198,7 +297,9 @@ WhatsApp ← → snow-phone ← → TIA API ← → DeCerTu Intelligence
 - Audit trails with citations to source documents
 - Confidence in data-driven decision making
 
-**Data Flow Example:**
+**Data Flow Examples:**
+
+**Example 1: Manual Evidence Submission**
 ```
 1. Foreman takes photo of concrete pour → WhatsApp
 2. snow-phone processes → TIA API
@@ -208,6 +309,37 @@ WhatsApp ← → snow-phone ← → TIA API ← → DeCerTu Intelligence
 6. Result: "✅ Concrete pour meets contract spec 5.2.3
    Evidence: Photo timestamp, contract citation, spec document"
 7. Automatic update to project board and compliance dashboard
+```
+
+**Example 2: Automated Video Analytics**
+```
+1. Ring camera captures delivery truck arrival → DeepStream
+2. Object detection: "truck" + "person" + dwell time 8.3 min
+3. Event published → Kafka → TIA Works
+4. ent_rag_search queries: "Expected delivery today?"
+5. Matches contract schedule: "Acme HVAC - 4 AHU units"
+6. VSS analyzes video for cargo identification
+7. Reconciliation engine confirms delivery vs contract
+8. Alert to PM: "✅ Scheduled delivery confirmed
+   Timestamp: 2026-01-07 09:43:21
+   Contract item: AHU-042 through AHU-045
+   Video evidence: 8.3 min unloading time"
+9. Automatic material receipt logging + schedule update
+```
+
+**Example 3: Safety Compliance**
+```
+1. DeepStream detects person in restricted zone (cam_zone_5)
+2. Event: object_class=person, zone_id=restricted, dwell_time=12s
+3. Kafka → compliance.alerts topic
+4. ent_rag_search checks contract safety requirements
+5. Violation detected: "Section 8.3.2 - No entry without escort"
+6. Alert to safety officer + field supervisor via snow-phone
+7. WhatsApp notification: "⚠️ Safety Alert - Unauthorized zone entry
+   Location: Zone 5 (East wing foundation)
+   Time: 14:23:15
+   Duration: 12 seconds
+   Required action: Immediate supervisor review"
 ```
 
 ### Development Roadmap Notes for Ali:
