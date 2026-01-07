@@ -6,44 +6,140 @@ The AI-Q NVIDIA Research Assistant blueprint allows you to create a deep researc
 
 ---
 
-## 🏗️ TIA Works Customization Vision
+## 🏗️ TIA Works: Construction Intelligence Architecture
 
-**Project Goal:** Repurpose this AI-Q Research Assistant for Construction Project Compliance & Performance Monitoring
+### **The Living Contract Model as Source of Truth**
 
-This deployment will be customized to perform intelligent research across the customer RAG pipeline and SLM to determine if all activities on the job site conform to and drive towards maintaining the cost and schedule deliverables defined in the contract or living contract model.
+TIA Works is a construction intelligence platform built around a central concept: the **Living Contract Model**. This model represents the contractual truth of a project, encompassing scope, budget, and schedule. Every piece of data that flows into the system—whether from legacy systems, real-time site sensors, document ingestion, or team communications—gets continuously reconciled against this living model.
 
-### Target Capabilities:
+**The goal is not simply to answer questions about documents. It is to create an intelligence layer that keeps projects on budget and on schedule by detecting variances, conflicts, and risks before they become problems.**
 
-**1. Contract Compliance Research**
-- Ingest contracts, living contract models, cost baselines, and schedules
-- Continuously monitor job site activities against contractual obligations
-- Multi-source analysis: RAG pipeline (internal construction docs) + SLM (local reasoning)
+### The Living Contract Model
 
-**2. Cost & Schedule Deviation Detection**
-- Research current job site activities from daily reports, logs, and IoT data
-- Compare actual progress vs. contract schedule milestones
-- Analyze cost expenditures vs. baseline budgets
-- Flag activities that are off-track or non-conforming
+The Living Contract Model is the source of truth representing three interconnected dimensions:
 
-**3. Automated Compliance Reports**
-- Generate regular reports showing:
-  - Activities aligned with contract deliverables ✓
-  - Activities deviating from schedule/cost targets ⚠️
-  - Root cause analysis of deviations
-  - Recommendations to get back on track
+| **SCOPE** | **BUDGET** | **SCHEDULE** |
+|-----------|------------|--------------|
+| What is being built | Contract value | Baseline schedule |
+| Contract requirements | Committed costs | Actual progress |
+| Specifications | Projected final cost | Forecast completion |
+| Approved changes | Cost to complete | Critical path |
 
-**4. Living Contract Synchronization**
-- Monitor changes to the living contract model
-- Alert when job site activities don't reflect updated contract terms
-- Ensure real-time compliance with evolving requirements
+### System Architecture
 
-**5. Predictive Risk Analysis**
-- Identify patterns suggesting future schedule slippage
-- Predict cost overruns before they materialize
-- Proactive recommendations to maintain deliverables
+The architecture centers on the Living Contract Model, with reconciliation agents continuously comparing incoming data against this source of truth:
 
-### Use Case:
-Transform from generic research assistant → **Construction project monitoring agent** that autonomously audits job site activities against contract terms, identifies compliance issues, and generates actionable intelligence to keep projects on cost and on schedule.
+```
+┌──────────────────────────────────────────────────────────┐
+│        LIVING CONTRACT MODEL                             │
+│        (Scope + Budget + Schedule = Truth)               │
+└─────────────────────┬────────────────────────────────────┘
+                      ↓
+┌──────────────────────────────────────────────────────────┐
+│        RECONCILIATION AGENTS                             │
+│   Budget Agent  |  Schedule Agent  |  Scope Agent        │
+└─────────────────────┬────────────────────────────────────┘
+                      ↓
+┌──────────────────────────────────────────────────────────┐
+│                    DATA SOURCES                          │
+│                                                          │
+│  Legacy Systems    Project Management   Real-Time Site  │
+│  • Job Costing     • Job File          • DeepStream     │
+│  • Procurement     • Submittals/RFIs   • Sensors/GPS    │
+│  • Dispatch        • Drawings          • WhatsApp       │
+│                                                          │
+│  Team Intelligence                                       │
+│  • Meeting Summaries  • Daily Reports  • Field Updates  │
+└──────────────────────────────────────────────────────────┘
+```
+
+### The Reconciliation Loop
+
+This is the **heartbeat of the system**. Every input that enters TIA Works gets evaluated against the Living Contract Model:
+
+1. **Does this affect BUDGET?** Compare: Committed Cost vs Contract Value vs Projected Final
+2. **Does this affect SCHEDULE?** Compare: Actual Progress vs Baseline vs Forecast
+3. **Does this affect SCOPE?** Compare: What is being built vs What is in the contract
+4. **Is there a CONFLICT?** Does this contradict something else we know?
+
+**Example: Real-Time Reconciliation**
+```
+Input: WhatsApp message: "Ductwork in Building B delayed 2 weeks - insulation inspection failed"
+
+→ Agent parses: {trade: HVAC, building: B, delay: 2 weeks, cause: inspection failure}
+→ Agent reconciles: Building B HVAC is on critical path
+→ Agent calculates: This pushes substantial completion by 8 days
+→ Agent checks contract: Liquidated damages are $5,000/day
+→ Agent alerts: CRITICAL: $40K LD exposure. Recommend acceleration.
+→ Agent learns: Pattern (inspection failure → delay) added to model
+```
+
+### What the SLM Must Learn
+
+The Small Language Model deployed on the Jetson Orin is not just for answering questions. It must understand construction logic deeply enough to perform reconciliation:
+
+**Contract Logic:**
+- How change orders affect budget and schedule
+- Scope changes vs means/methods distinctions
+- Liquidated damages, retention, payment terms
+- Submittal and approval workflow impacts
+
+**Construction Relationships:**
+- Trade dependencies (sequencing logic)
+- Critical path analysis
+- Procurement lead times and schedule impacts
+- Weather, inspections, coordination effects
+
+**Pattern Recognition:**
+- Early warning signs of problems
+- Common causes of delays and overruns
+- RFI patterns indicating design issues
+- Subcontractor performance indicators
+
+### The Data Flywheel
+
+Each project makes the system smarter for the next project. The data flywheel continuously improves the model:
+
+```
+Job Data → Agent Actions → Outcomes → Training Data → Improved Model → Job Data...
+```
+
+The model learns from real outcomes:
+- "When this contractor sends this type of message, delay usually follows"
+- "RFIs about structural connections have 80% chance of change order"
+- "Jobs in this jurisdiction average 3 weeks longer for inspections"
+
+### Core Agent Tasks (NVIDIA Agent Toolkit)
+
+The NVIDIA Agent Toolkit (NAT) agents perform five continuous operations:
+
+| Stage | Operation | Description |
+|-------|-----------|-------------|
+| **1. INGEST** | Data Collection | Take in data from all sources (APIs, documents, sensors, messages) |
+| **2. PARSE** | Extraction | Extract structured information (costs, dates, scope items, entities) |
+| **3. RECONCILE** | Comparison | Compare against the Living Contract Model (scope, budget, schedule) |
+| **4. DETECT** | Analysis | Identify variances, conflicts, risks, and early warning signs |
+| **5. ALERT** | Action | Notify stakeholders when things drift from plan, recommend actions |
+
+### Technology Stack
+
+**Cloud Layer (Training & Large Model Inference):**
+- Nemotron-4 340B Instruct: Synthetic data generation from documents
+- Nemotron-4 340B Reward: Quality filtering of training data
+- NeMo Customizer: LoRA fine-tuning of base models
+- NVIDIA Blueprints: RAG, Data Flywheel, Video Search
+
+**Edge Layer (Field Deployment):**
+- Jetson AGX Orin 64GB: 275 TOPS edge compute
+- Nemotron-3 Nano (or Llama 3.2): Fine-tuned SLM for construction intelligence
+- NVIDIA Agent Toolkit: Reconciliation agent framework
+- DeepStream: Video analytics and sensor processing
+- Triton Inference Server: Model serving with TensorRT-LLM
+- Supabase: Real-time data sync (WhatsApp, field updates)
+
+### Customization Goal for this Repository
+
+Transform the AI-Q Research Assistant into the **Reconciliation Research Engine** that continuously audits job site activities against the Living Contract Model, detects deviations, and generates actionable intelligence to keep projects on cost and on schedule.
 
 ---
 
