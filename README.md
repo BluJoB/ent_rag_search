@@ -2,7 +2,50 @@
 
 ## Overview
 
-The AI-Q NVIDIA Research Assistant blueprint allows you to create a deep research assistant that can run on-premise, allowing anyone to create detailed research reports using on-premise data and web search. 
+The AI-Q NVIDIA Research Assistant blueprint allows you to create a deep research assistant that can run on-premise, allowing anyone to create detailed research reports using on-premise data and web search.
+
+---
+
+## 🏗️ TIA Works Customization Vision
+
+**Project Goal:** Repurpose this AI-Q Research Assistant for Construction Project Compliance & Performance Monitoring
+
+This deployment will be customized to perform intelligent research across the customer RAG pipeline and SLM to determine if all activities on the job site conform to and drive towards maintaining the cost and schedule deliverables defined in the contract or living contract model.
+
+### Target Capabilities:
+
+**1. Contract Compliance Research**
+- Ingest contracts, living contract models, cost baselines, and schedules
+- Continuously monitor job site activities against contractual obligations
+- Multi-source analysis: RAG pipeline (internal construction docs) + SLM (local reasoning)
+
+**2. Cost & Schedule Deviation Detection**
+- Research current job site activities from daily reports, logs, and IoT data
+- Compare actual progress vs. contract schedule milestones
+- Analyze cost expenditures vs. baseline budgets
+- Flag activities that are off-track or non-conforming
+
+**3. Automated Compliance Reports**
+- Generate regular reports showing:
+  - Activities aligned with contract deliverables ✓
+  - Activities deviating from schedule/cost targets ⚠️
+  - Root cause analysis of deviations
+  - Recommendations to get back on track
+
+**4. Living Contract Synchronization**
+- Monitor changes to the living contract model
+- Alert when job site activities don't reflect updated contract terms
+- Ensure real-time compliance with evolving requirements
+
+**5. Predictive Risk Analysis**
+- Identify patterns suggesting future schedule slippage
+- Predict cost overruns before they materialize
+- Proactive recommendations to maintain deliverables
+
+### Use Case:
+Transform from generic research assistant → **Construction project monitoring agent** that autonomously audits job site activities against contract terms, identifies compliance issues, and generates actionable intelligence to keep projects on cost and on schedule.
+
+--- 
 
 ## Table of Contents
 
